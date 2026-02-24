@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER EXAM: EXPERT TIER</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&family=Silkscreen&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0800; /* Sedikit lebih warm untuk tema Expert */
+            --cyber-yellow: #fcee0a;
+            --cyber-blue: #00f0ff;
+            --cyber-red: #ff003c;
+            --cyber-green: #00ff66;
+            --cyber-orange: #ff8c00;
+            --font-ui: 'Share Tech Mono', monospace;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-header: 'Silkscreen', cursive;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e0e0e0; font-family: var(--font-ui);
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(252, 238, 10, 0.03) 3px);
+        }
+
+        /* OVERLAYS */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 8, 0, 0.98); z-index: 9999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+        }
+
+        .glitch { font-family: var(--font-header); font-size: 3rem; color: var(--cyber-yellow); text-shadow: 3px 0 var(--cyber-red), -3px 0 var(--cyber-blue); animation: glitch-anim 0.2s infinite; }
+        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
+
+        input.cyber-input {
+            background: #111; border: 2px solid var(--cyber-yellow);
+            color: #fff; padding: 15px; width: 300px; margin: 10px;
+            font-family: var(--font-ui); font-size: 1.1rem; text-align: center;
+        }
+        input.cyber-input:focus { outline: none; box-shadow: 0 0 15px var(--cyber-yellow); }
+
+        .btn-cyber {
+            background: var(--cyber-yellow); color: #000; border: none;
+            padding: 15px 40px; font-family: var(--font-header); font-size: 1.2rem;
+            cursor: pointer; margin-top: 20px; transition: 0.2s;
+        }
+        .btn-cyber:hover { background: #fff; box-shadow: 0 0 20px var(--cyber-yellow); }
+
+        /* LAYOUT */
+        header {
+            height: 70px; background: #000; border-bottom: 3px solid var(--cyber-yellow);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+        }
+        h1 { font-family: var(--font-header); font-size: 1.5rem; margin: 0; color: var(--cyber-yellow); }
+        .timer-box { font-size: 1.5rem; color: var(--cyber-yellow); font-family: var(--font-header); letter-spacing: 2px; }
+        
+        .workspace { display: flex; height: calc(100vh - 70px); }
+        .problem-panel { width: 35%; background: rgba(0,0,0,0.8); border-right: 2px solid var(--cyber-yellow); padding: 30px; overflow-y: auto; }
+        .editor-panel { width: 65%; display: flex; flex-direction: column; background: #111; }
+        
+        textarea#code-editor {
+            flex: 1; background: #111; color: var(--cyber-yellow); border: none; padding: 20px;
+            font-family: var(--font-code); font-size: 16px; resize: none; outline: none;
+        }
+        .terminal {
+            height: 200px; background: #000; color: #fff; padding: 15px;
+            font-family: var(--font-code); font-size: 0.9rem; border-top: 2px solid #333; overflow-y: auto;
+        }
+        .toolbar {
+            height: 60px; background: #000; border-top: 2px solid var(--cyber-yellow);
+            display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; gap: 15px;
+        }
+        
+        .level-badge { background: var(--cyber-yellow); color: #000; padding: 4px 10px; font-family: var(--font-header); }
+        h2 { color: var(--cyber-yellow); font-family: var(--font-header); font-size: 1.3rem; margin-top: 15px;}
+
+        .btn-run { background: var(--cyber-yellow); color: #000; padding: 10px 20px; border: none; font-family: var(--font-header); cursor: pointer; }
+        .btn-next { background: var(--cyber-green); color: #000; padding: 10px 20px; border: none; font-family: var(--font-header); cursor: pointer; display: none; }
+
+        /* WARNING & LOCKDOWN SCREENS */
+        #warning-screen { background: rgba(255, 140, 0, 0.95); color: #000; }
+        #lockdown-screen { background: rgba(255, 0, 60, 0.95); color: #000; }
+        .lock-timer { font-size: 5rem; font-family: var(--font-header); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="overlay">
+        <h1 style="font-size: 2.5rem; color: var(--cyber-yellow); font-family: var(--font-header);">NCART // EXPERT TIER</h1>
+        <p style="color: var(--cyber-red); font-weight: bold;">[ ANTI-CHEAT ACTIVE ] REFRESH ATAU PINDAH TAB = LOCKDOWN 20 MENIT.</p>
+        <input type="text" id="inp-nama" class="cyber-input" placeholder="NAMA LENGKAP" autocomplete="off">
+        <input type="text" id="inp-kelas" class="cyber-input" placeholder="KELAS (Ex: XIA)" autocomplete="off">
+        <button class="btn-cyber" onclick="initializeNewExam()">START EXPERT EXAM</button>
+    </div>
+
+    <div id="loader" class="overlay" style="display:none;">
+        <h2 class="glitch">UPLOADING EXPERT ALGORITHMS...</h2>
+    </div>
+
+    <div id="warning-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #000;">STRICT WARNING</h1>
+        <h2 style="color: #000;">SISTEM MENDETEKSI PERPINDAHAN TAB / APLIKASI.</h2>
+        <p style="font-size: 1.2rem; font-weight: bold; max-width: 600px; color: #111;">
+            Ini adalah peringatan pertama dan terakhir Anda di Tier Expert. Jika Anda memindahkan tab lagi, terminal Anda akan DIKUNCI SELAMA 20 MENIT dan tidak bisa di-refresh.
+        </p>
+        <button class="btn-cyber" style="background: #000; color: var(--cyber-orange);" onclick="dismissWarning()">SAYA MENGERTI</button>
+    </div>
+
+    <div id="lockdown-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #000;">SECURITY BREACH</h1>
+        <h2 id="lockdown-warning" style="color: #000;">MULTIPLE TAB SWITCHING LOGGED.</h2>
+        <div class="lock-timer" id="lock-timer">20:00</div>
+        <p style="font-size: 1.2rem; font-weight: bold; color: #111;">TERMINAL LOCKED. REFRESHING THE PAGE WILL NOT RESET THIS TIMER.</p>
+    </div>
+
+    <header>
+        <h1>EXPERT EXAM // 15_NODE</h1>
+        <div style="display: flex; gap: 30px; align-items: center;">
+            <div style="color: var(--cyber-red); font-weight: bold;">VIOLATIONS: <span id="violation-count">0</span></div>
+            <div class="timer-box" id="main-timer">90:00</div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="problem-panel">
+            <span class="level-badge" id="lvl-badge">NODE 01/15</span>
+            <h2 id="q-title">...</h2>
+            <div id="q-desc" style="color:#aaa; line-height:1.6; font-size: 1.1rem;">...</div>
+        </div>
+
+        <div class="editor-panel">
+            <textarea id="code-editor" spellcheck="false"></textarea>
+            <div class="terminal" id="console">> EXPERT_TERMINAL_READY...</div>
+            <div class="toolbar">
+                <span id="status-msg" style="margin-right:auto; color:var(--cyber-yellow)">Awaiting input...</span>
+                <button class="btn-run" id="btn-run" onclick="runCode()">EXECUTE ▶</button>
+                <button class="btn-next" id="btn-next" onclick="nextQuestion()">NEXT NODE >></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4rem; color: var(--cyber-yellow); font-family: var(--font-header);">EXAM COMPLETED</h1>
+        <p style="font-size: 1.5rem;">FINAL SCORE: <span id="final-score" style="color:var(--cyber-green); font-weight: bold; font-size: 2rem;">0</span> / 1500</p>
+        <p style="font-size: 1.2rem; color: var(--cyber-red);">TOTAL VIOLATIONS: <span id="final-violations">0</span></p>
+        <div id="send-status" style="margin-top: 20px; color: var(--cyber-blue);">Uploading data to Server...</div>
+        <br>
+        <button class="btn-cyber" onclick="window.location.href='index.html'" style="border:1px solid #fff; background:transparent; color:#fff;">RETURN TO HUB</button>
+    </div>
+
+    <script>
+        // --- SETUP GOOGLE SHEET URL ---
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMlysRhY7kLOqIjxGmWcvFgwwa644vdf3Iy9PyWsGY6j41DbBCX0Ge5QYWknMVP6b/exec'; // <-- PASTE URL DISINI
+
+        let pyodide;
+        let studentName = "", studentClass = "";
+        let examEndTime = 0; 
+        let lockEndTime = 0; 
+        let examTimerInterval, lockTimerInterval;
+        let currentQ = 0, score = 0, violations = 0;
+        let isExamActive = false, isLocked = false, isWarningOpen = false;
+        let lastPenaltyTime = 0;
+
+        // --- DATABASE SOAL EXPERT (15 SOAL) ---
+        // Logika lebih menantang (Campuran IF, FOR, dan LIST)
+        const questions = [
+            { title: "01. LOGIC: DISCOUNT", desc: "Total belanja adalah 150000. Jika total di atas 100000, berikan potongan harga (diskon) sebesar 20000. Print total bayar akhirnya.", default: "total = 150000\n\n# Gunakan if\n", check: (c, o) => c.includes("if") && o.includes("130000") },
+            { title: "02. LOGIC: THERMAL SENSOR", desc: "Suhu = 35. Buat If-Elif-Else: Jika suhu >= 30 print 'Panas', >= 20 print 'Normal', lainnya print 'Dingin'.", default: "suhu = 35\n", check: (c, o) => c.includes("elif") && o.includes("Panas") },
+            { title: "03. LIST: MATH", desc: "Diberikan list <code>a = [10, 20, 30]</code>. Print hasil KALI dari item pertama dan item terakhir list tersebut.", default: "a = [10, 20, 30]\n# print hasil perkalian", check: (c, o) => c.includes("[0]") && c.includes("[-1]") && o.includes("300") },
+            { title: "04. LIST: MULTI-MOD", desc: "List <code>b = ['A', 'B', 'C']</code>. Ganti 'B' dengan 'X', lalu tambahkan 'Y' di bagian paling belakang. Print list b.", default: "b = ['A', 'B', 'C']\n\n# Ubah B jadi X, lalu append Y\n\nprint(b)", check: (c, o) => c.includes("append") && o.includes("X") && o.includes("Y") && !o.includes("B") },
+            { title: "05. LIST: INSERT", desc: "List <code>c = [1, 3, 4]</code>. Gunakan method <code>.insert()</code> untuk menyelipkan angka 2 di antara 1 dan 3. Print list c.", default: "c = [1, 3, 4]\n# c.insert(index, data)\n\nprint(c)", check: (c, o) => c.includes(".insert") && o.includes("2") && o.includes("3") },
+            { title: "06. FOR: RANGE MATH", desc: "Gunakan <code>for</code> dan <code>range()</code> untuk mencetak angka kelipatan 3, mulai dari 3 hingga 15.", default: "# print: 3, 6, 9, 12, 15\n", check: (c, o) => c.includes("for") && c.includes("range") && o.includes("15") && !o.includes("16") },
+            { title: "07. FOR & LIST: MAP", desc: "Disediakan list <code>data = [2, 4, 6]</code> dan list kosong <code>baru = []</code>. Loop list data, kalikan tiap angka dengan 2, lalu append ke list baru. Print list baru.", default: "data = [2, 4, 6]\nbaru = []\n\n# Lakukan loop dan append\n\nprint(baru)", check: (c, o) => c.includes("for") && c.includes(".append") && o.includes("12") && o.includes("8") },
+            { title: "08. FOR & IF: FILTER", desc: "List <code>nums = [10, 15, 20, 25]</code>. Gunakan for dan if untuk HANYA mem-print angka yang habis dibagi 10.", default: "nums = [10, 15, 20, 25]\n", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("20") && !o.includes("15") },
+            { title: "09. ALGORITMA: AVERAGE", desc: "Hitung nilai Rata-Rata dari <code>nilai = [80, 90, 100]</code>. Gunakan loop untuk mencari total, lalu bagi dengan <code>len()</code>. Print rata-ratanya.", default: "nilai = [80, 90, 100]\ntotal = 0\n\n# Loop untuk total, lalu bagi len\n", check: (c, o) => c.includes("for") && c.includes("len") && o.includes("90") },
+            { title: "10. ALGORITMA: FIND MAX", desc: "Cari angka terbesar dari <code>skor = [45, 12, 89, 33]</code> <b>TANPA</b> fungsi max(). Gunakan for loop dan if. Print nilai terbesarnya.", default: "skor = [45, 12, 89, 33]\nterbesar = skor[0]\n\n# Loop dan cek if\n", check: (c, o) => c.includes("for") && c.includes("if") && !c.includes("max(") && o.includes("89") },
+            { title: "11. STRING ITERATION", desc: "Teks = <code>'CYBER'</code>. Lakukan for loop pada teks, print setiap huruf dan tambahkan karakter '-' (misal: C-).", default: "teks = 'CYBER'\n# Loop string ini", check: (c, o) => c.includes("for") && o.includes("C-") && o.includes("R-") },
+            { title: "12. NESTED CONDITIONALS", desc: "<code>izin = True</code>, <code>umur = 16</code>. Jika izin True, cek: Jika umur >= 18 print 'Masuk', jika tidak print 'Didampingi'. Jika izin False, print 'Ditolak'.", default: "izin = True\numur = 16\n\n# Buat if bersarang (nested)\n", check: (c, o) => c.includes("if") && o.includes("Didampingi") },
+            { title: "13. FOR: CONTINUE", desc: "Loop angka 1 sampai 5. Gunakan perintah <code>continue</code> untuk melewati angka 3. Print sisanya.", default: "for i in range(1, 6):\n    # gunakan if i == 3 dan continue\n", check: (c, o) => c.includes("continue") && o.includes("5") && !o.includes("3") },
+            { title: "14. ALGORITMA: COUNTING", desc: "Diberikan <code>huruf = ['A', 'B', 'A', 'C', 'A']</code>. Gunakan for loop dan if untuk menghitung ada berapa jumlah karakter 'A'. Print jumlahnya.", default: "huruf = ['A', 'B', 'A', 'C', 'A']\njumlah = 0\n\n# Loop untuk menghitung A\n\nprint(jumlah)", check: (c, o) => c.includes("for") && c.includes("if") && o.includes("3") },
+            { title: "15. BOSS: FIZZBUZZ", desc: "Loop angka 1 sampai 15. Jika habis dibagi 3 print 'Fizz', bagi 5 print 'Buzz', bagi keduanya (misal 15) print 'FizzBuzz'. Sisanya print angka.", default: "for i in range(1, 16):\n    # Hati-hati urutan pengecekan if\n", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("FizzBuzz") && o.includes("14") && o.includes("Fizz") }
+        ];
+
+        // --- CHECK LOCAL STORAGE ON LOAD ---
+        window.onload = function() {
+            // PERHATIKAN: Prefixnya sekarang "expert_" agar memori ujian Pemula tidak bentrok
+            if (localStorage.getItem("expert_active") === "true") {
+                studentName = localStorage.getItem("expert_name");
+                studentClass = localStorage.getItem("expert_class");
+                examEndTime = parseInt(localStorage.getItem("expert_examEnd"));
+                currentQ = parseInt(localStorage.getItem("expert_currentQ"));
+                score = parseInt(localStorage.getItem("expert_score"));
+                violations = parseInt(localStorage.getItem("expert_violations")) || 0;
+                
+                document.getElementById("violation-count").innerText = violations;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("loader").style.display = "flex";
+
+                initPython(true); 
+            } else if (localStorage.getItem("expert_active") === "finished") {
+                document.getElementById("login-screen").innerHTML = "<h1 style='color:var(--cyber-red)'>ANDA SUDAH MENYELESAIKAN UJIAN INI.</h1><button class=\"btn-cyber\" onclick=\"window.location.href='index.html'\">KEMBALI KE MENU</button>";
+            }
+        };
+
+        function initializeNewExam() {
+            studentName = document.getElementById("inp-nama").value.trim();
+            studentClass = document.getElementById("inp-kelas").value.trim();
+            if(!studentName || !studentClass) return alert("Identitas wajib diisi.");
+
+            localStorage.setItem("expert_active", "true");
+            localStorage.setItem("expert_name", studentName);
+            localStorage.setItem("expert_class", studentClass);
+            localStorage.setItem("expert_score", "0");
+            localStorage.setItem("expert_currentQ", "0");
+            localStorage.setItem("expert_violations", "0");
+            
+            // 90 Menit (5400 detik)
+            examEndTime = Date.now() + (5400 * 1000);
+            localStorage.setItem("expert_examEnd", examEndTime.toString());
+
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("loader").style.display = "flex";
+
+            initPython(false);
+        }
+
+        async function initPython(isResume) {
+            try {
+                pyodide = await loadPyodide();
+                document.getElementById("loader").style.display = "none";
+                isExamActive = true;
+                
+                startMainTimer();
+                loadQuestion(currentQ);
+                
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('blur', handleWindowBlur);
+
+                if (isResume) {
+                    let savedLockEnd = parseInt(localStorage.getItem("expert_lockEnd")) || 0;
+                    if (savedLockEnd > Date.now()) {
+                        lockEndTime = savedLockEnd;
+                        resumeLockdown();
+                    }
+                }
+
+            } catch (err) {
+                alert("SYSTEM FAILURE: Tidak dapat memuat compiler Python.");
+            }
+        }
+
+        // --- ANTI CHEAT LOGIC ---
+        function handleVisibilityChange() { if (document.hidden && isExamActive) applyPenalty(); }
+        function handleWindowBlur() { if (isExamActive) applyPenalty(); }
+
+        function applyPenalty() {
+            let now = Date.now();
+            if (now - lastPenaltyTime < 1000) return; 
+            lastPenaltyTime = now;
+
+            violations++;
+            localStorage.setItem("expert_violations", violations.toString());
+            document.getElementById("violation-count").innerText = violations;
+
+            if (violations === 1) {
+                isWarningOpen = true;
+                document.getElementById("warning-screen").style.display = "flex";
+            } else {
+                if(isWarningOpen) document.getElementById("warning-screen").style.display = "none";
+                isWarningOpen = false;
+                
+                lockEndTime = Date.now() + (1200 * 1000); 
+                localStorage.setItem("expert_lockEnd", lockEndTime.toString());
+                resumeLockdown(); 
+            }
+        }
+
+        function dismissWarning() {
+            document.getElementById("warning-screen").style.display = "none";
+            isWarningOpen = false;
+        }
+
+        function resumeLockdown() {
+            isLocked = true;
+            document.getElementById("lockdown-screen").style.display = "flex";
+            
+            document.getElementById("lockdown-screen").style.background = "rgba(200, 0, 0, 0.95)";
+            setTimeout(() => { document.getElementById("lockdown-screen").style.background = "rgba(255, 0, 60, 0.95)"; }, 150);
+
+            clearInterval(lockTimerInterval); 
+            updateLockTimerDisplay();
+
+            lockTimerInterval = setInterval(() => {
+                updateLockTimerDisplay();
+                if(Date.now() >= lockEndTime) {
+                    clearInterval(lockTimerInterval);
+                    document.getElementById("lockdown-screen").style.display = "none";
+                    isLocked = false;
+                    localStorage.removeItem("expert_lockEnd"); 
+                }
+            }, 1000);
+        }
+
+        function updateLockTimerDisplay() {
+            let timeLeft = Math.max(0, Math.floor((lockEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('lock-timer').innerText = `${m}:${s}`;
+        }
+
+        // --- EXAM TIMER ---
+        function startMainTimer() {
+            examTimerInterval = setInterval(() => {
+                let timeLeft = Math.max(0, Math.floor((examEndTime - Date.now()) / 1000));
+                if(timeLeft <= 0) {
+                    finishExam(); 
+                } else {
+                    let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                    let s = (timeLeft % 60).toString().padStart(2, '0');
+                    document.getElementById('main-timer').innerText = `${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        // --- QUESTION LOGIC ---
+        function loadQuestion(idx) {
+            const q = questions[idx];
+            document.getElementById("lvl-badge").innerText = `NODE ${String(idx+1).padStart(2,'0')}/15`;
+            document.getElementById("q-title").innerText = q.title;
+            document.getElementById("q-desc").innerHTML = q.desc;
+            document.getElementById("code-editor").value = q.default;
+            
+            document.getElementById("btn-next").style.display = "none";
+            document.getElementById("btn-run").disabled = false;
+            document.getElementById("console").innerText = "> Waiting for execution...";
+            document.getElementById("status-msg").innerText = "Ready.";
+            document.getElementById("status-msg").style.color = "var(--cyber-yellow)";
+        }
+
+        async function runCode() {
+            if(isLocked || isWarningOpen) return;
+
+            const btn = document.getElementById("btn-run");
+            const term = document.getElementById("console");
+            const code = document.getElementById("code-editor").value;
+            const q = questions[currentQ];
+            
+            btn.disabled = true; term.innerText = "> EXECUTING SCRIPT...";
+
+            let script = `
+import sys
+from io import StringIO
+sys.stdout = mystdout = StringIO()
+try:
+${code.split('\n').map(l=>'    '+l).join('\n')}
+except Exception as e:
+    print(f"Error: {e}")
+mystdout.getvalue()`;
+
+            try {
+                let out = await pyodide.runPythonAsync(script);
+                term.innerText = out;
+
+                if(out.includes("Error:")) {
+                    document.getElementById("status-msg").innerText = "[!] SYNTAX ERROR";
+                    document.getElementById("status-msg").style.color = "var(--cyber-red)";
+                } else if(q.check(code, out)) {
+                    document.getElementById("status-msg").innerText = "[+] LOGIC ACCEPTED. ACCESS GRANTED.";
+                    document.getElementById("status-msg").style.color = "var(--cyber-green)";
+                    document.getElementById("btn-next").style.display = "inline-block";
+                    
+                    if(!q.completed) { 
+                        score += 100; 
+                        q.completed = true; 
+                        localStorage.setItem("expert_score", score.toString());
+                    } 
+                } else {
+                    document.getElementById("status-msg").innerText = "[-] OUTPUT INCORRECT OR LOGIC MISSING.";
+                    document.getElementById("status-msg").style.color = "var(--cyber-orange)";
+                }
+            } catch (e) {
+                term.innerText = "CRITICAL ERROR: " + e;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            if(currentQ < questions.length) {
+                localStorage.setItem("expert_currentQ", currentQ.toString());
+                loadQuestion(currentQ);
+            } else {
+                finishExam();
+            }
+        }
+
+        // --- SUBMISSION ---
+        function finishExam() {
+            isExamActive = false;
+            clearInterval(examTimerInterval);
+            clearInterval(lockTimerInterval);
+            
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleWindowBlur);
+
+            document.getElementById("warning-screen").style.display = "none";
+            document.getElementById("lockdown-screen").style.display = "none";
+            
+            // Tandai selesai
+            localStorage.setItem("expert_active", "finished");
+
+            document.getElementById("result-screen").style.display = "flex";
+            document.getElementById("final-score").innerText = score;
+            document.getElementById("final-violations").innerText = violations;
+
+            sendDataToSheet();
+        }
+
+        function sendDataToSheet() {
+            const statusEl = document.getElementById("send-status");
+            
+            let timeUsedSeconds = Math.max(0, 5400 - Math.floor((examEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0');
+            let s = (timeUsedSeconds % 60).toString().padStart(2, '0');
+            
+            const payload = {
+                nama: studentName + " (EXPERT)", // Menambahkan penanda di Spreadsheet
+                kelas: studentClass,
+                skor: score,
+                durasi: `${m}:${s}`,
+                pelanggaran: violations
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                statusEl.innerText = "[+] DATA UPLOADED TO SERVER.";
+                statusEl.style.color = "var(--cyber-green)";
+            })
+            .catch(err => {
+                statusEl.innerText = "[-] UPLOAD FAILED. SCREENSHOT THIS PAGE.";
+                statusEl.style.color = "var(--cyber-red)";
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER EXAM: DEWA TIER</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;700&family=Silkscreen&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #050000; /* Super dark, blood red hue */
+            --cyber-yellow: #fcee0a;
+            --cyber-blue: #00f0ff;
+            --cyber-red: #ff0015; /* Blood red */
+            --cyber-green: #00ff66;
+            --cyber-orange: #ff4500;
+            --font-ui: 'Share Tech Mono', monospace;
+            --font-code: 'JetBrains Mono', monospace;
+            --font-header: 'Silkscreen', cursive;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #d0d0d0; font-family: var(--font-ui);
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; overflow: hidden;
+            background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 21, 0.04) 3px);
+        }
+
+        /* OVERLAYS */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 0, 0, 0.98); z-index: 9999;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+        }
+
+        .glitch { font-family: var(--font-header); font-size: 3rem; color: var(--cyber-red); text-shadow: 4px 0 #fff, -4px 0 #000; animation: glitch-anim 0.1s infinite; }
+        @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-3px, 3px) } 40% { transform: translate(-3px, -3px) } 60% { transform: translate(3px, 3px) } 80% { transform: translate(3px, -3px) } 100% { transform: translate(0) } }
+
+        input.cyber-input {
+            background: #0a0000; border: 2px solid var(--cyber-red);
+            color: #fff; padding: 15px; width: 300px; margin: 10px;
+            font-family: var(--font-ui); font-size: 1.1rem; text-align: center;
+        }
+        input.cyber-input:focus { outline: none; box-shadow: 0 0 20px var(--cyber-red); background: #1a0000; }
+
+        .btn-cyber {
+            background: var(--cyber-red); color: #fff; border: 2px solid #fff;
+            padding: 15px 40px; font-family: var(--font-header); font-size: 1.2rem;
+            cursor: pointer; margin-top: 20px; transition: 0.2s;
+        }
+        .btn-cyber:hover { background: #fff; color: var(--cyber-red); box-shadow: 0 0 30px var(--cyber-red); }
+
+        /* LAYOUT */
+        header {
+            height: 70px; background: #000; border-bottom: 3px solid var(--cyber-red);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+        }
+        h1 { font-family: var(--font-header); font-size: 1.5rem; margin: 0; color: var(--cyber-red); text-shadow: 2px 2px 0px #fff; }
+        .timer-box { font-size: 1.5rem; color: var(--cyber-red); font-family: var(--font-header); letter-spacing: 2px; }
+        
+        .workspace { display: flex; height: calc(100vh - 70px); }
+        .problem-panel { width: 35%; background: rgba(15, 0, 0, 0.8); border-right: 2px solid var(--cyber-red); padding: 30px; overflow-y: auto; }
+        .editor-panel { width: 65%; display: flex; flex-direction: column; background: #0a0a0a; }
+        
+        textarea#code-editor {
+            flex: 1; background: #0a0a0a; color: var(--cyber-red); border: none; padding: 20px;
+            font-family: var(--font-code); font-size: 16px; resize: none; outline: none; font-weight: bold;
+        }
+        .terminal {
+            height: 200px; background: #000; color: #fff; padding: 15px;
+            font-family: var(--font-code); font-size: 0.9rem; border-top: 2px solid #333; overflow-y: auto;
+        }
+        .toolbar {
+            height: 60px; background: #000; border-top: 2px solid var(--cyber-red);
+            display: flex; justify-content: flex-end; align-items: center; padding: 0 20px; gap: 15px;
+        }
+        
+        .level-badge { background: #fff; color: var(--cyber-red); padding: 4px 10px; font-family: var(--font-header); font-weight: bold; }
+        h2 { color: #fff; font-family: var(--font-header); font-size: 1.3rem; margin-top: 15px; text-shadow: 1px 1px 5px var(--cyber-red); }
+
+        .btn-run { background: var(--cyber-red); color: #fff; padding: 10px 20px; border: 1px solid #fff; font-family: var(--font-header); cursor: pointer; }
+        .btn-run:hover { background: #fff; color: var(--cyber-red); }
+        .btn-next { background: var(--cyber-green); color: #000; padding: 10px 20px; border: none; font-family: var(--font-header); cursor: pointer; display: none; }
+
+        /* WARNING & LOCKDOWN SCREENS */
+        #warning-screen { background: rgba(255, 69, 0, 0.98); color: #000; }
+        #lockdown-screen { background: rgba(139, 0, 0, 0.98); color: #fff; }
+        .lock-timer { font-size: 6rem; font-family: var(--font-header); margin: 20px 0; color: #fff; text-shadow: 0 0 20px #000; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen" class="overlay">
+        <h1 style="font-size: 3.5rem; color: var(--cyber-red); font-family: var(--font-header); text-shadow: 3px 3px 0 #fff;">GOD TIER // DEWA</h1>
+        <p style="color: #fff; font-weight: bold; font-size: 1.2rem; max-width: 600px;">
+            Hanya untuk entitas dengan tingkat kecerdasan tertinggi.<br>
+            [ ANTI-CHEAT MAX SEC: REFRESH ATAU PINDAH TAB = LOCKDOWN 20 MENIT ]
+        </p>
+        <input type="text" id="inp-nama" class="cyber-input" placeholder="NAMA LENGKAP" autocomplete="off">
+        <input type="text" id="inp-kelas" class="cyber-input" placeholder="KELAS (Ex: XIIA)" autocomplete="off">
+        <button class="btn-cyber" onclick="initializeNewExam()">>>> ENTER THE ABYSS <<<</button>
+    </div>
+
+    <div id="loader" class="overlay" style="display:none;">
+        <h2 class="glitch">UPLOADING GOD PROTOCOLS...</h2>
+    </div>
+
+    <div id="warning-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #000;">STRICT WARNING</h1>
+        <h2 style="color: #000;">SISTEM MENDETEKSI PERPINDAHAN TAB / APLIKASI.</h2>
+        <p style="font-size: 1.2rem; font-weight: bold; max-width: 600px; color: #111;">
+            Jangan meremehkan pengawasan sistem. Jika Anda memindahkan tab lagi, terminal akan DIKUNCI SELAMA 20 MENIT tanpa ampun.
+        </p>
+        <button class="btn-cyber" style="background: #000; color: var(--cyber-red); border-color: #000;" onclick="dismissWarning()">SAYA MENGERTI</button>
+    </div>
+
+    <div id="lockdown-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4.5rem; font-family: var(--font-header); margin: 0; color: #fff;">FATAL BREACH</h1>
+        <h2 id="lockdown-warning" style="color: var(--cyber-red); text-shadow: 1px 1px 0 #fff;">MULTIPLE TAB SWITCHING LOGGED.</h2>
+        <div class="lock-timer" id="lock-timer">20:00</div>
+        <p style="font-size: 1.2rem; font-weight: bold; color: #ccc;">TERMINAL LOCKED. REFRESHING THE PAGE WILL NOT RESET THIS TIMER.</p>
+    </div>
+
+    <header>
+        <h1>DEWA EXAM // 15_NODE</h1>
+        <div style="display: flex; gap: 30px; align-items: center;">
+            <div style="color: #fff; font-weight: bold;">VIOLATIONS: <span id="violation-count" style="color: var(--cyber-red); font-size: 1.5rem;">0</span></div>
+            <div class="timer-box" id="main-timer">90:00</div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <div class="problem-panel">
+            <span class="level-badge" id="lvl-badge">NODE 01/15</span>
+            <h2 id="q-title">...</h2>
+            <div id="q-desc" style="color:#d0d0d0; line-height:1.7; font-size: 1.1rem;">...</div>
+        </div>
+
+        <div class="editor-panel">
+            <textarea id="code-editor" spellcheck="false"></textarea>
+            <div class="terminal" id="console">> GOD_TERMINAL_READY...</div>
+            <div class="toolbar">
+                <span id="status-msg" style="margin-right:auto; color:var(--cyber-red)">Awaiting input...</span>
+                <button class="btn-run" id="btn-run" onclick="runCode()">EXECUTE ▶</button>
+                <button class="btn-next" id="btn-next" onclick="nextQuestion()">NEXT NODE >></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 5rem; color: var(--cyber-red); font-family: var(--font-header); text-shadow: 3px 3px 0 #fff;">TRANSCENDENCE ACHIEVED</h1>
+        <p style="font-size: 1.5rem;">FINAL SCORE: <span id="final-score" style="color:#fff; font-weight: bold; font-size: 2.5rem;">0</span> / 1500</p>
+        <p style="font-size: 1.2rem; color: var(--cyber-red);">TOTAL VIOLATIONS: <span id="final-violations">0</span></p>
+        <div id="send-status" style="margin-top: 20px; color: #fff;">Uploading data to Server...</div>
+        <br>
+        <button class="btn-cyber" onclick="window.location.href='index.html'">RETURN TO HUB</button>
+    </div>
+
+    <script>
+        // --- SETUP GOOGLE SHEET URL ---
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMlysRhY7kLOqIjxGmWcvFgwwa644vdf3Iy9PyWsGY6j41DbBCX0Ge5QYWknMVP6b/exec'; // <-- PASTE URL DISINI
+
+        let pyodide;
+        let studentName = "", studentClass = "";
+        let examEndTime = 0; 
+        let lockEndTime = 0; 
+        let examTimerInterval, lockTimerInterval;
+        let currentQ = 0, score = 0, violations = 0;
+        let isExamActive = false, isLocked = false, isWarningOpen = false;
+        let lastPenaltyTime = 0;
+
+        // --- DATABASE SOAL DEWA (15 SOAL ALGORITMA) ---
+        const questions = [
+            { title: "01. LOGIC: VARIABLE SWAP", desc: "Diketahui <code>a = 10</code> dan <code>b = 20</code>. Tukar isi kedua variabel tersebut TANPA menulis angka secara langsung. Print a lalu b.", default: "a = 10\nb = 20\n\n# Tukar nilai a dan b\n\nprint(a)\nprint(b)", check: (c, o) => c.includes("a") && c.includes("b") && !c.includes("= 20") && o.includes("20") && o.includes("10") },
+            { title: "02. ALGORITMA: FAKTORIAL", desc: "Gunakan <code>for</code> loop untuk menghitung nilai Faktorial dari 5 (5 * 4 * 3 * 2 * 1). Print hasil akhirnya.", default: "angka = 5\nhasil = 1\n\n# Lakukan loop untuk faktorial\n\nprint(hasil)", check: (c, o) => c.includes("for") && o.includes("120") },
+            { title: "03. LOGIC: KABISAT", desc: "Tahun = 2024. Cek apakah ini tahun kabisat (Habis dibagi 4). Gunakan if/else. Print 'Kabisat' jika ya, 'Bukan' jika tidak.", default: "tahun = 2024\n\n# Gunakan if tahun % 4 == 0\n", check: (c, o) => c.includes("if") && c.includes("%") && o.includes("Kabisat") },
+            { title: "04. LIST: AUTO GENERATE", desc: "Gunakan <code>for</code> loop dan <code>.append()</code> untuk membuat list berisi kelipatan 4, dari angka 4 hingga 20. Print list tersebut.", default: "kelipatan = []\n\n# Loop dan Append\n\nprint(kelipatan)", check: (c, o) => c.includes("for") && c.includes("append") && o.includes("20") && o.includes("16") && o.includes("[") },
+            { title: "05. LIST: REVERSE ARRAY", desc: "Diberikan list <code>data = [1, 2, 3, 4, 5]</code>. Print list tersebut dalam keadaan terbalik (5, 4, 3...). Boleh pakai slicing atau reverse().", default: "data = [1, 2, 3, 4, 5]\n\n# Balikkan list\n", check: (c, o) => o.includes("5") && o.includes("1") && (c.includes("reverse") || c.includes("::-1")) },
+            { title: "06. ALGORITMA: ODD/EVEN SPLIT", desc: "List <code>data = [10, 15, 20, 25]</code>. Pisahkan angka genap ke list <code>genap</code>, dan ganjil ke <code>ganjil</code>. Print list genap, lalu ganjil.", default: "data = [10, 15, 20, 25]\ngenap = []\nganjil = []\n\n# Loop, if, append\n\nprint(genap)\nprint(ganjil)", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("10") && o.includes("15") && c.includes("append") },
+            { title: "07. ALGORITMA: FIND TARGET", desc: "List <code>acak = [12, 45, 99, 23]</code>. Cari di <b>Index</b> ke berapa angka 99 berada. Boleh pakai fungsi .index() atau loop manual. Print indexnya.", default: "acak = [12, 45, 99, 23]\n\n# Cari dan print index dari angka 99\n", check: (c, o) => o.includes("2") },
+            { title: "08. STRING & LIST: VOWEL COUNT", desc: "Teks = <code>'INDONESIA'</code>. Hitung ada berapa huruf vokal (A, I, U, E, O) di dalam teks tersebut menggunakan loop. Print jumlahnya.", default: "teks = 'INDONESIA'\nvokal = ['A', 'I', 'U', 'E', 'O']\njumlah = 0\n\n# Loop tiap huruf di teks\n\nprint(jumlah)", check: (c, o) => c.includes("for") && o.includes("5") },
+            { title: "09. ALGORITMA: SECOND MAX", desc: "Dari <code>skor = [90, 80, 100, 70]</code>, cari dan print nilai Terbesar KEDUA. Trik: Boleh di-sort() dulu, lalu ambil index -2.", default: "skor = [90, 80, 100, 70]\n\n# Cari nilai terbesar kedua\n", check: (c, o) => o.includes("90") && !o.includes("100") },
+            { title: "10. LIST: UNIQUE ELEMENTS", desc: "List <code>data = [1, 1, 2, 3, 3]</code> berisi angka kembar. Buat logika untuk hanya menyimpan angka unik di list <code>baru</code>. Print list <code>baru</code>.", default: "data = [1, 1, 2, 3, 3]\nbaru = []\n\n# Jika belum ada di 'baru', maka append\n\nprint(baru)", check: (c, o) => c.includes("for") && c.includes("append") && o.includes("1") && o.includes("3") && !o.includes("1, 1") },
+            { title: "11. ALGORITMA: DOT PRODUCT", desc: "<code>a = [1, 2, 3]</code> dan <code>b = [4, 5, 6]</code>. Buat list <code>c</code> yang isinya adalah hasil kali elemen di index yang sama (a[0]*b[0], dst). Print c.", default: "a = [1, 2, 3]\nb = [4, 5, 6]\nc = []\n\n# Loop menggunakan range(len(a))\n\nprint(c)", check: (c, o) => c.includes("for") && o.includes("4") && o.includes("10") && o.includes("18") },
+            { title: "12. ALGORITMA: PRIME CHECK", desc: "<code>angka = 7</code>. Cek apakah ini bilangan Prima (hanya habis dibagi 1 dan dirinya sendiri). Print 'Prima' atau 'Bukan'.", default: "angka = 7\nprima = True\n\n# Loop dari 2 sampai angka-1\n\nif prima:\n    print('Prima')", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("Prima") },
+            { title: "13. ALGORITMA: SUM POSITIVES", desc: "<code>data = [-1, 2, -3, 4]</code>. Gunakan for loop, jumlahkan HANYA angka yang positif (> 0). Print hasil jumlahnya.", default: "data = [-1, 2, -3, 4]\ntotal = 0\n\n# Loop dan If\n\nprint(total)", check: (c, o) => c.includes("for") && c.includes("if") && o.includes("6") },
+            { title: "14. ALGORITMA: FIBONACCI", desc: "Buat list <code>fibo = [0, 1]</code>. Generate 3 angka Fibonacci berikutnya dengan menjumlahkan 2 angka sebelumnya, lalu di-append. Print list fibo (harus 5 angka).", default: "fibo = [0, 1]\n\n# Loop 3 kali\n# angka_baru = fibo[-1] + fibo[-2]\n\nprint(fibo)", check: (c, o) => c.includes("append") && o.includes("1, 2, 3") && o.includes("0, 1") },
+            { title: "15. GOD BOSS: BUBBLE SORT", desc: "Urutkan <code>data = [5, 3, 8, 1, 2]</code> dari kecil ke besar <b>TANPA fungsi .sort()</b>. Gunakan nested loop dan swap (a,b = b,a). Print hasilnya.", default: "data = [5, 3, 8, 1, 2]\nn = len(data)\n\n# Nested loop Bubble Sort\nfor i in range(n):\n    for j in range(0, n-i-1):\n        # Jika elemen ke j > j+1, tukar tempatnya\n        pass\n        \nprint(data)", check: (c, o) => !c.includes(".sort(") && o.includes("1") && o.includes("5") && o.includes("8") && c.includes("for") }
+        ];
+
+        // --- CHECK LOCAL STORAGE ON LOAD ---
+        window.onload = function() {
+            // PREFIX UNTUK DEWA TIER: "dewa_"
+            if (localStorage.getItem("dewa_active") === "true") {
+                studentName = localStorage.getItem("dewa_name");
+                studentClass = localStorage.getItem("dewa_class");
+                examEndTime = parseInt(localStorage.getItem("dewa_examEnd"));
+                currentQ = parseInt(localStorage.getItem("dewa_currentQ"));
+                score = parseInt(localStorage.getItem("dewa_score"));
+                violations = parseInt(localStorage.getItem("dewa_violations")) || 0;
+                
+                document.getElementById("violation-count").innerText = violations;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("loader").style.display = "flex";
+
+                initPython(true); 
+            } else if (localStorage.getItem("dewa_active") === "finished") {
+                document.getElementById("login-screen").innerHTML = "<h1 style='color:var(--cyber-red)'>ANDA SUDAH MENYELESAIKAN UJIAN INI.</h1><button class=\"btn-cyber\" onclick=\"window.location.href='index.html'\">KEMBALI KE HUB</button>";
+            }
+        };
+
+        function initializeNewExam() {
+            studentName = document.getElementById("inp-nama").value.trim();
+            studentClass = document.getElementById("inp-kelas").value.trim();
+            if(!studentName || !studentClass) return alert("Identitas wajib diisi.");
+
+            localStorage.setItem("dewa_active", "true");
+            localStorage.setItem("dewa_name", studentName);
+            localStorage.setItem("dewa_class", studentClass);
+            localStorage.setItem("dewa_score", "0");
+            localStorage.setItem("dewa_currentQ", "0");
+            localStorage.setItem("dewa_violations", "0");
+            
+            // Waktu 90 Menit
+            examEndTime = Date.now() + (5400 * 1000);
+            localStorage.setItem("dewa_examEnd", examEndTime.toString());
+
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("loader").style.display = "flex";
+
+            initPython(false);
+        }
+
+        async function initPython(isResume) {
+            try {
+                pyodide = await loadPyodide();
+                document.getElementById("loader").style.display = "none";
+                isExamActive = true;
+                
+                startMainTimer();
+                loadQuestion(currentQ);
+                
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('blur', handleWindowBlur);
+
+                if (isResume) {
+                    let savedLockEnd = parseInt(localStorage.getItem("dewa_lockEnd")) || 0;
+                    if (savedLockEnd > Date.now()) {
+                        lockEndTime = savedLockEnd;
+                        resumeLockdown();
+                    }
+                }
+
+            } catch (err) {
+                alert("SYSTEM FAILURE: Python Compiler Gagal Dimuat.");
+            }
+        }
+
+        // --- ANTI CHEAT LOGIC ---
+        function handleVisibilityChange() { if (document.hidden && isExamActive) applyPenalty(); }
+        function handleWindowBlur() { if (isExamActive) applyPenalty(); }
+
+        function applyPenalty() {
+            let now = Date.now();
+            if (now - lastPenaltyTime < 1000) return; 
+            lastPenaltyTime = now;
+
+            violations++;
+            localStorage.setItem("dewa_violations", violations.toString());
+            document.getElementById("violation-count").innerText = violations;
+
+            if (violations === 1) {
+                isWarningOpen = true;
+                document.getElementById("warning-screen").style.display = "flex";
+            } else {
+                if(isWarningOpen) document.getElementById("warning-screen").style.display = "none";
+                isWarningOpen = false;
+                
+                lockEndTime = Date.now() + (1200 * 1000); 
+                localStorage.setItem("dewa_lockEnd", lockEndTime.toString());
+                resumeLockdown(); 
+            }
+        }
+
+        function dismissWarning() {
+            document.getElementById("warning-screen").style.display = "none";
+            isWarningOpen = false;
+        }
+
+        function resumeLockdown() {
+            isLocked = true;
+            document.getElementById("lockdown-screen").style.display = "flex";
+            
+            document.getElementById("lockdown-screen").style.background = "rgba(255, 0, 0, 0.95)";
+            setTimeout(() => { document.getElementById("lockdown-screen").style.background = "rgba(139, 0, 0, 0.98)"; }, 150);
+
+            clearInterval(lockTimerInterval); 
+            updateLockTimerDisplay();
+
+            lockTimerInterval = setInterval(() => {
+                updateLockTimerDisplay();
+                if(Date.now() >= lockEndTime) {
+                    clearInterval(lockTimerInterval);
+                    document.getElementById("lockdown-screen").style.display = "none";
+                    isLocked = false;
+                    localStorage.removeItem("dewa_lockEnd"); 
+                }
+            }, 1000);
+        }
+
+        function updateLockTimerDisplay() {
+            let timeLeft = Math.max(0, Math.floor((lockEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('lock-timer').innerText = `${m}:${s}`;
+        }
+
+        // --- EXAM TIMER ---
+        function startMainTimer() {
+            examTimerInterval = setInterval(() => {
+                let timeLeft = Math.max(0, Math.floor((examEndTime - Date.now()) / 1000));
+                if(timeLeft <= 0) {
+                    finishExam(); 
+                } else {
+                    let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                    let s = (timeLeft % 60).toString().padStart(2, '0');
+                    document.getElementById('main-timer').innerText = `${m}:${s}`;
+                }
+            }, 1000);
+        }
+
+        // --- QUESTION LOGIC ---
+        function loadQuestion(idx) {
+            const q = questions[idx];
+            document.getElementById("lvl-badge").innerText = `NODE ${String(idx+1).padStart(2,'0')}/15`;
+            document.getElementById("q-title").innerText = q.title;
+            document.getElementById("q-desc").innerHTML = q.desc;
+            document.getElementById("code-editor").value = q.default;
+            
+            document.getElementById("btn-next").style.display = "none";
+            document.getElementById("btn-run").disabled = false;
+            document.getElementById("console").innerText = "> Waiting for execution...";
+            document.getElementById("status-msg").innerText = "Ready.";
+            document.getElementById("status-msg").style.color = "var(--cyber-red)";
+        }
+
+        async function runCode() {
+            if(isLocked || isWarningOpen) return;
+
+            const btn = document.getElementById("btn-run");
+            const term = document.getElementById("console");
+            const code = document.getElementById("code-editor").value;
+            const q = questions[currentQ];
+            
+            btn.disabled = true; term.innerText = "> EXECUTING ALGORITHM...";
+
+            let script = `
+import sys
+from io import StringIO
+sys.stdout = mystdout = StringIO()
+try:
+${code.split('\n').map(l=>'    '+l).join('\n')}
+except Exception as e:
+    print(f"Error: {e}")
+mystdout.getvalue()`;
+
+            try {
+                let out = await pyodide.runPythonAsync(script);
+                term.innerText = out;
+
+                if(out.includes("Error:")) {
+                    document.getElementById("status-msg").innerText = "[!] SYNTAX ERROR";
+                    document.getElementById("status-msg").style.color = "var(--cyber-red)";
+                } else if(q.check(code, out)) {
+                    document.getElementById("status-msg").innerText = "[+] ALGORITHM VERIFIED. ACCESS GRANTED.";
+                    document.getElementById("status-msg").style.color = "var(--cyber-green)";
+                    document.getElementById("btn-next").style.display = "inline-block";
+                    
+                    if(!q.completed) { 
+                        score += 100; 
+                        q.completed = true; 
+                        localStorage.setItem("dewa_score", score.toString());
+                    } 
+                } else {
+                    document.getElementById("status-msg").innerText = "[-] OUTPUT INCORRECT OR ALGORITHM MISSING.";
+                    document.getElementById("status-msg").style.color = "var(--cyber-yellow)";
+                }
+            } catch (e) {
+                term.innerText = "CRITICAL ERROR: " + e;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            if(currentQ < questions.length) {
+                localStorage.setItem("dewa_currentQ", currentQ.toString());
+                loadQuestion(currentQ);
+            } else {
+                finishExam();
+            }
+        }
+
+        // --- SUBMISSION ---
+        function finishExam() {
+            isExamActive = false;
+            clearInterval(examTimerInterval);
+            clearInterval(lockTimerInterval);
+            
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('blur', handleWindowBlur);
+
+            document.getElementById("warning-screen").style.display = "none";
+            document.getElementById("lockdown-screen").style.display = "none";
+            
+            localStorage.setItem("dewa_active", "finished");
+
+            document.getElementById("result-screen").style.display = "flex";
+            document.getElementById("final-score").innerText = score;
+            document.getElementById("final-violations").innerText = violations;
+
+            sendDataToSheet();
+        }
+
+        function sendDataToSheet() {
+            const statusEl = document.getElementById("send-status");
+            
+            let timeUsedSeconds = Math.max(0, 5400 - Math.floor((examEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0');
+            let s = (timeUsedSeconds % 60).toString().padStart(2, '0');
+            
+            const payload = {
+                nama: studentName + " (DEWA)", // Penanda di Spreadsheet
+                kelas: studentClass,
+                skor: score,
+                durasi: `${m}:${s}`,
+                pelanggaran: violations
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                statusEl.innerText = "[+] DATA UPLOADED TO SERVER.";
+                statusEl.style.color = "var(--cyber-green)";
+            })
+            .catch(err => {
+                statusEl.innerText = "[-] UPLOAD FAILED. SCREENSHOT THIS PAGE.";
+                statusEl.style.color = "var(--cyber-red)";
+            });
+        }
+    </script>
+</body>
+</html>
