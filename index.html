@@ -13,8 +13,9 @@
             --bg-dark: #090a0f;
             --cyber-yellow: #fcee0a;
             --cyber-blue: #00f0ff;
-            --cyber-red: #f700ff;
+            --cyber-red: #ff003c;
             --cyber-green: #00ff66;
+            --cyber-orange: #ff8c00;
             --font-ui: 'Share Tech Mono', monospace;
             --font-code: 'JetBrains Mono', monospace;
             --font-header: 'Silkscreen', cursive;
@@ -33,12 +34,11 @@
         /* OVERLAYS */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(9, 10, 15, 0.95); z-index: 9999;
+            background: rgba(9, 10, 15, 0.98); z-index: 9999;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
         }
 
-        /* Glitch Effect */
         .glitch { font-family: var(--font-header); font-size: 3rem; color: var(--cyber-red); text-shadow: 3px 0 var(--cyber-blue), -3px 0 var(--cyber-yellow); animation: glitch-anim 0.2s infinite; }
         @keyframes glitch-anim { 0% { transform: translate(0) } 20% { transform: translate(-2px, 2px) } 40% { transform: translate(-2px, -2px) } 60% { transform: translate(2px, 2px) } 80% { transform: translate(2px, -2px) } 100% { transform: translate(0) } }
 
@@ -87,38 +87,49 @@
         .btn-run { background: var(--cyber-blue); color: #000; padding: 10px 20px; border: none; font-family: var(--font-header); cursor: pointer; }
         .btn-next { background: var(--cyber-green); color: #000; padding: 10px 20px; border: none; font-family: var(--font-header); cursor: pointer; display: none; }
 
-        /* LOCKDOWN SCREEN */
+        /* WARNING SCREEN (1st Offense) */
+        #warning-screen { background: rgba(255, 140, 0, 0.95); color: #000; }
+        
+        /* LOCKDOWN SCREEN (2nd+ Offense) */
         #lockdown-screen { background: rgba(255, 0, 60, 0.95); color: #000; }
         .lock-timer { font-size: 5rem; font-family: var(--font-header); margin: 20px 0; }
-        #lockdown-warning { transition: 0.3s; }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="overlay">
-        <h1 style="font-size: 2.5rem; color: var(--cyber-yellow); font-family: var(--font-header);">NCART // ACADEMY EXAM</h1>
-        <p style="color: var(--cyber-red); font-weight: bold;">WARNING: TAB SWITCHING WILL LOCK YOUR TERMINAL FOR 20 MINUTES.</p>
+        <h1 style="font-size: 2.5rem; color: var(--cyber-yellow); font-family: var(--font-header);">SMA GUNUNG MADU // CYBER EXAM</h1>
+        <p style="color: var(--cyber-red); font-weight: bold;">[ ANTI-CHEAT ACTIVE ] REFRESH ATAU PINDAH TAB = LOCKDOWN 20 MENIT.</p>
         <input type="text" id="inp-nama" class="cyber-input" placeholder="NAMA LENGKAP" autocomplete="off">
-        <input type="text" id="inp-kelas" class="cyber-input" placeholder="KELAS (Ex: X-1)" autocomplete="off">
-        <button class="btn-cyber" onclick="startExam()">INITIALIZE EXAM</button>
+        <input type="text" id="inp-kelas" class="cyber-input" placeholder="KELAS (Ex: XI-1)" autocomplete="off">
+        <button class="btn-cyber" onclick="initializeNewExam()">START EXAM</button>
     </div>
 
     <div id="loader" class="overlay" style="display:none;">
         <h2 class="glitch">CONNECTING TO MAINFRAME...</h2>
     </div>
 
+    <div id="warning-screen" class="overlay" style="display:none;">
+        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #000;">STRICT WARNING</h1>
+        <h2 style="color: #000;">SISTEM MENDETEKSI PERPINDAHAN TAB / APLIKASI.</h2>
+        <p style="font-size: 1.2rem; font-weight: bold; max-width: 600px; color: #111;">
+            Ini adalah peringatan pertama dan terakhir Anda. Jika Anda memindahkan tab, membuka aplikasi lain, atau meminimize browser lagi, terminal Anda akan DIKUNCI SELAMA 20 MENIT dan tidak bisa di-refresh.
+        </p>
+        <button class="btn-cyber" style="background: #000; color: var(--cyber-orange);" onclick="dismissWarning()">SAYA MENGERTI</button>
+    </div>
+
     <div id="lockdown-screen" class="overlay" style="display:none;">
-        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0;">SECURITY BREACH DETECTED</h1>
-        <h2 id="lockdown-warning">UNAUTHORIZED TAB SWITCHING LOGGED.</h2>
+        <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #000;">SECURITY BREACH</h1>
+        <h2 id="lockdown-warning" style="color: #000;">MULTIPLE TAB SWITCHING LOGGED.</h2>
         <div class="lock-timer" id="lock-timer">20:00</div>
-        <p style="font-size: 1.2rem; font-weight: bold;">TERMINAL LOCKED. DO NOT CLOSE THIS WINDOW.</p>
+        <p style="font-size: 1.2rem; font-weight: bold; color: #111;">TERMINAL LOCKED. REFRESHING THE PAGE WILL NOT RESET THIS TIMER.</p>
     </div>
 
     <header>
         <h1>FINAL EXAM // 15_NODE</h1>
         <div style="display: flex; gap: 30px; align-items: center;">
             <div style="color: var(--cyber-blue); font-weight: bold;">VIOLATIONS: <span id="violation-count">0</span></div>
-            <div class="timer-box" id="main-timer">60:00</div>
+            <div class="timer-box" id="main-timer">90:00</div>
         </div>
     </header>
 
@@ -144,30 +155,30 @@
         <h1 style="font-size: 4rem; color: var(--cyber-green); font-family: var(--font-header);">EXAM COMPLETED</h1>
         <p style="font-size: 1.5rem;">FINAL SCORE: <span id="final-score" style="color:var(--cyber-yellow); font-weight: bold; font-size: 2rem;">0</span> / 1500</p>
         <p style="font-size: 1.2rem; color: var(--cyber-red);">TOTAL VIOLATIONS: <span id="final-violations">0</span></p>
-        <div id="send-status" style="margin-top: 20px; color: var(--cyber-blue);">Uploading data to Arasaka Server...</div>
+        <div id="send-status" style="margin-top: 20px; color: var(--cyber-blue);">Uploading data to Server...</div>
     </div>
 
     <script>
         // --- SETUP GOOGLE SHEET URL ---
-        // GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhXv47OD0_D-yNDb438dP2JjLzS8TETlqR7Ow3_5WPGeJsrdIwORJfwKbsEbBowcAr/exec';
+        // GANTI TULISAN DI BAWAH INI DENGAN URL WEB APP ANDA
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMlysRhY7kLOqIjxGmWcvFgwwa644vdf3Iy9PyWsGY6j41DbBCX0Ge5QYWknMVP6b/exec';
 
         let pyodide;
         let studentName = "", studentClass = "";
         
-        // Timers & Counters
-        let examTimeLeft = 3600; // 60 menit dalam detik
-        let lockTimeLeft = 0;
+        let examEndTime = 0; 
+        let lockEndTime = 0; 
+        
         let examTimerInterval;
         let lockTimerInterval;
         
         let currentQ = 0;
         let score = 0;
         let violations = 0;
-        let isLocked = false;
-        let isExamActive = false;
         
-        // Anti-cheat debounce tracker
+        let isExamActive = false;
+        let isLocked = false;
+        let isWarningOpen = false;
         let lastPenaltyTime = 0;
 
         // --- DATABASE SOAL (15 SOAL) ---
@@ -189,108 +200,148 @@
             { title: "15. BOSS: FILTER LIST", desc: "Disediakan list <code>data = [10, 80, 30, 90]</code>. Buat list kosong <code>lulus = []</code>. Lakukan loop, jika nilai > 50, masukkan (append) ke list lulus. Print list lulus.", default: "data = [10, 80, 30, 90]\nlulus = []\n\n# Loop, If, Append\n\nprint(lulus)", check: (c, o) => c.includes("for") && c.includes("if") && c.includes(".append") && o.includes("80") && o.includes("90") && !o.includes("10") }
         ];
 
-        // --- FLOW CONTROL ---
-        function startExam() {
+        // --- CHECK LOCAL STORAGE ON LOAD ---
+        window.onload = function() {
+            if (localStorage.getItem("ce_active") === "true") {
+                // Resume Exam
+                studentName = localStorage.getItem("ce_name");
+                studentClass = localStorage.getItem("ce_class");
+                examEndTime = parseInt(localStorage.getItem("ce_examEnd"));
+                currentQ = parseInt(localStorage.getItem("ce_currentQ"));
+                score = parseInt(localStorage.getItem("ce_score"));
+                violations = parseInt(localStorage.getItem("ce_violations")) || 0;
+                
+                document.getElementById("violation-count").innerText = violations;
+                document.getElementById("login-screen").style.display = "none";
+                document.getElementById("loader").style.display = "flex";
+
+                initPython(true); 
+            } else if (localStorage.getItem("ce_active") === "finished") {
+                document.getElementById("login-screen").innerHTML = "<h1 style='color:var(--cyber-red)'>ANDA SUDAH MENYELESAIKAN UJIAN INI.</h1>";
+            }
+        };
+
+        function initializeNewExam() {
             studentName = document.getElementById("inp-nama").value.trim();
             studentClass = document.getElementById("inp-kelas").value.trim();
-            if(!studentName || !studentClass) return alert("Akses Ditolak: Identitas wajib diisi.");
+            if(!studentName || !studentClass) return alert("Identitas wajib diisi.");
+
+            // Set Local Storage
+            localStorage.setItem("ce_active", "true");
+            localStorage.setItem("ce_name", studentName);
+            localStorage.setItem("ce_class", studentClass);
+            localStorage.setItem("ce_score", "0");
+            localStorage.setItem("ce_currentQ", "0");
+            localStorage.setItem("ce_violations", "0");
+            
+            // WAKTU UJIAN: 90 Menit (5400 detik)
+            examEndTime = Date.now() + (5400 * 1000);
+            localStorage.setItem("ce_examEnd", examEndTime.toString());
 
             document.getElementById("login-screen").style.display = "none";
             document.getElementById("loader").style.display = "flex";
 
-            initPython();
+            initPython(false);
         }
 
-        async function initPython() {
+        async function initPython(isResume) {
             try {
                 pyodide = await loadPyodide();
                 document.getElementById("loader").style.display = "none";
                 isExamActive = true;
                 
                 startMainTimer();
-                loadQuestion(0);
+                loadQuestion(currentQ);
                 
-                // AKTIFKAN ANTI-CHEAT PROTOCOL
+                // EVENT LISTENER ANTI-CHEAT
                 document.addEventListener('visibilitychange', handleVisibilityChange);
                 window.addEventListener('blur', handleWindowBlur);
 
+                // Jika saat direfresh dia masih dalam masa hukuman
+                if (isResume) {
+                    let savedLockEnd = parseInt(localStorage.getItem("ce_lockEnd")) || 0;
+                    if (savedLockEnd > Date.now()) {
+                        lockEndTime = savedLockEnd;
+                        resumeLockdown();
+                    }
+                }
+
             } catch (err) {
-                alert("SYSTEM FAILURE: Tidak dapat memuat compiler. Refresh halaman.");
+                alert("SYSTEM FAILURE: Tidak dapat memuat compiler Python.");
             }
         }
 
-        // --- ANTI CHEAT LOGIC WITH RESET ---
-        function handleVisibilityChange() {
-            if (document.hidden && isExamActive) applyPenalty();
-        }
-        function handleWindowBlur() {
-            if (isExamActive) applyPenalty();
-        }
+        // --- ANTI CHEAT LOGIC ---
+        function handleVisibilityChange() { if (document.hidden && isExamActive) applyPenalty(); }
+        function handleWindowBlur() { if (isExamActive) applyPenalty(); }
 
         function applyPenalty() {
             let now = Date.now();
-            // Mencegah double trigger dalam waktu 1 detik
-            if (now - lastPenaltyTime < 1000) return; 
+            if (now - lastPenaltyTime < 1000) return; // Debounce 1 detik
             lastPenaltyTime = now;
 
             violations++;
+            localStorage.setItem("ce_violations", violations.toString());
             document.getElementById("violation-count").innerText = violations;
 
-            if (!isLocked) {
-                // Lockdown Pertama Kali
-                isLocked = true;
-                lockTimeLeft = 1200; // 20 Menit (1200 detik)
-                
-                document.getElementById("lockdown-warning").innerText = "UNAUTHORIZED TAB SWITCHING LOGGED.";
-                document.getElementById("lockdown-warning").style.color = "inherit";
-                document.getElementById("lockdown-screen").style.display = "flex";
-                
-                updateLockTimerDisplay();
-
-                lockTimerInterval = setInterval(() => {
-                    lockTimeLeft--;
-                    updateLockTimerDisplay();
-                    if(lockTimeLeft <= 0) {
-                        clearInterval(lockTimerInterval);
-                        document.getElementById("lockdown-screen").style.display = "none";
-                        isLocked = false;
-                    }
-                }, 1000);
+            if (violations === 1) {
+                isWarningOpen = true;
+                document.getElementById("warning-screen").style.display = "flex";
             } else {
-                // Jika sedang dilockdown, lalu siswa pindah tab lagi -> RESET WAKTU!
-                lockTimeLeft = 1200;
-                updateLockTimerDisplay();
+                if(isWarningOpen) document.getElementById("warning-screen").style.display = "none";
+                isWarningOpen = false;
                 
-                // Ubah teks peringatan agar siswa tahu hukumannya direset
-                let warningText = document.getElementById("lockdown-warning");
-                warningText.innerText = "MULTIPLE VIOLATIONS! TIMER RESET TO MAXIMUM.";
-                warningText.style.color = "var(--cyber-yellow)";
+                // Lockdown 20 Menit (1200 detik)
+                lockEndTime = Date.now() + (1200 * 1000); 
+                localStorage.setItem("ce_lockEnd", lockEndTime.toString());
                 
-                // Flash effect
-                document.getElementById("lockdown-screen").style.background = "rgba(200, 0, 0, 0.95)";
-                setTimeout(() => {
-                    document.getElementById("lockdown-screen").style.background = "rgba(255, 0, 60, 0.95)";
-                }, 200);
+                resumeLockdown(); 
             }
         }
 
+        function dismissWarning() {
+            document.getElementById("warning-screen").style.display = "none";
+            isWarningOpen = false;
+        }
+
+        function resumeLockdown() {
+            isLocked = true;
+            document.getElementById("lockdown-screen").style.display = "flex";
+            
+            document.getElementById("lockdown-screen").style.background = "rgba(200, 0, 0, 0.95)";
+            setTimeout(() => { document.getElementById("lockdown-screen").style.background = "rgba(255, 0, 60, 0.95)"; }, 150);
+
+            clearInterval(lockTimerInterval); 
+            updateLockTimerDisplay();
+
+            lockTimerInterval = setInterval(() => {
+                updateLockTimerDisplay();
+                if(Date.now() >= lockEndTime) {
+                    clearInterval(lockTimerInterval);
+                    document.getElementById("lockdown-screen").style.display = "none";
+                    isLocked = false;
+                    localStorage.removeItem("ce_lockEnd"); 
+                }
+            }, 1000);
+        }
+
         function updateLockTimerDisplay() {
-            let m = Math.floor(lockTimeLeft / 60).toString().padStart(2, '0');
-            let s = (lockTimeLeft % 60).toString().padStart(2, '0');
+            let timeLeft = Math.max(0, Math.floor((lockEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
             document.getElementById('lock-timer').innerText = `${m}:${s}`;
         }
 
         // --- EXAM TIMER ---
         function startMainTimer() {
             examTimerInterval = setInterval(() => {
-                // Waktu ujian utama tetap berjalan meski sedang dilockdown
-                examTimeLeft--; 
+                let timeLeft = Math.max(0, Math.floor((examEndTime - Date.now()) / 1000));
                 
-                if(examTimeLeft <= 0) {
+                if(timeLeft <= 0) {
                     finishExam(); 
                 } else {
-                    let m = Math.floor(examTimeLeft / 60).toString().padStart(2, '0');
-                    let s = (examTimeLeft % 60).toString().padStart(2, '0');
+                    let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                    let s = (timeLeft % 60).toString().padStart(2, '0');
                     document.getElementById('main-timer').innerText = `${m}:${s}`;
                 }
             }, 1000);
@@ -312,7 +363,7 @@
         }
 
         async function runCode() {
-            if(isLocked) return;
+            if(isLocked || isWarningOpen) return;
 
             const btn = document.getElementById("btn-run");
             const term = document.getElementById("console");
@@ -343,7 +394,11 @@ mystdout.getvalue()`;
                     document.getElementById("status-msg").style.color = "var(--cyber-green)";
                     document.getElementById("btn-next").style.display = "inline-block";
                     
-                    if(!q.completed) { score += 100; q.completed = true; } 
+                    if(!q.completed) { 
+                        score += 100; 
+                        q.completed = true; 
+                        localStorage.setItem("ce_score", score.toString());
+                    } 
                 } else {
                     document.getElementById("status-msg").innerText = "[-] OUTPUT INCORRECT OR LOGIC MISSING.";
                     document.getElementById("status-msg").style.color = "var(--cyber-yellow)";
@@ -357,23 +412,28 @@ mystdout.getvalue()`;
 
         function nextQuestion() {
             currentQ++;
-            if(currentQ < questions.length) loadQuestion(currentQ);
-            else finishExam();
+            if(currentQ < questions.length) {
+                localStorage.setItem("ce_currentQ", currentQ.toString());
+                loadQuestion(currentQ);
+            } else {
+                finishExam();
+            }
         }
 
         // --- SUBMISSION ---
         function finishExam() {
             isExamActive = false;
             clearInterval(examTimerInterval);
+            clearInterval(lockTimerInterval);
+            
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('blur', handleWindowBlur);
 
-            // Jika sedang dilockdown, paksa tutup layar lockdownnya
-            if (isLocked) {
-                clearInterval(lockTimerInterval);
-                document.getElementById("lockdown-screen").style.display = "none";
-                isLocked = false;
-            }
+            document.getElementById("warning-screen").style.display = "none";
+            document.getElementById("lockdown-screen").style.display = "none";
+
+            // Mark Exam as Completed
+            localStorage.setItem("ce_active", "finished");
 
             document.getElementById("result-screen").style.display = "flex";
             document.getElementById("final-score").innerText = score;
@@ -385,9 +445,10 @@ mystdout.getvalue()`;
         function sendDataToSheet() {
             const statusEl = document.getElementById("send-status");
             
-            let timeUsed = 3600 - examTimeLeft;
-            let m = Math.floor(timeUsed / 60).toString().padStart(2, '0');
-            let s = (timeUsed % 60).toString().padStart(2, '0');
+            // 5400 adalah 90 menit dalam satuan detik
+            let timeUsedSeconds = Math.max(0, 5400 - Math.floor((examEndTime - Date.now()) / 1000));
+            let m = Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0');
+            let s = (timeUsedSeconds % 60).toString().padStart(2, '0');
             
             const payload = {
                 nama: studentName,
@@ -397,19 +458,25 @@ mystdout.getvalue()`;
                 pelanggaran: violations
             };
 
+            // BYPASS CORS SECURITY 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
+                mode: "no-cors", // <--- INI SANGAT PENTING AGAR TIDAK DIBLOKIR BROWSER
+                headers: {
+                    "Content-Type": "text/plain"
+                },
                 body: JSON.stringify(payload)
             })
             .then(() => {
-                statusEl.innerText = "[+] DATA UPLOADED TO ARASAKA MAINFRAME.";
+                // Dalam mode no-cors, kita tidak bisa membaca respon Google, 
+                // tapi jika sampai sini berarti data berhasil berangkat.
+                statusEl.innerText = "[+] DATA UPLOADED TO SERVER.";
                 statusEl.style.color = "var(--cyber-green)";
             })
             .catch(err => {
                 statusEl.innerText = "[-] UPLOAD FAILED. SCREENSHOT THIS PAGE AS PROOF.";
                 statusEl.style.color = "var(--cyber-red)";
+                console.error("Fetch error:", err);
             });
         }
     </script>
