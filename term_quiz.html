@@ -96,33 +96,36 @@
            RESPONSIVE MOBILE STYLES (DI BAWAH 768px)
            ========================================= */
         @media (max-width: 768px) {
-            /* Tweak the Header */
-            header { padding: 0 15px; }
-            h1 { font-size: 1.1rem; }
-            .timer-box { font-size: 1.2rem; }
-            header > div { gap: 10px; }
-
-            /* Tweak the Workspace Layout to Column */
-            .workspace { flex-direction: column; overflow-y: auto; }
+            /* 1. Izinkan scrolling natural di body untuk HP */
+            body { height: auto; overflow-y: auto; }
             
-            /* Panel Soal: Pindah ke atas, tinggi pas, border di bawah */
+            /* 2. Sesuaikan Header */
+            header { padding: 15px; height: auto; flex-direction: column; gap: 10px; text-align: center; }
+            h1 { font-size: 1.5rem; }
+            .timer-box { font-size: 1.2rem; width: 100%; text-align: center; margin-bottom: 5px; }
+
+            /* 3. Bebaskan tinggi Workspace */
+            .workspace { flex-direction: column; height: auto; overflow: visible; }
+            
+            /* 4. Panel Soal menyesuaikan isinya */
             .problem-panel { 
-                width: 100%; height: 35vh; 
+                width: 100%; height: auto; min-height: 200px; 
                 border-right: none; border-bottom: 2px solid var(--cyber-purple); 
-                padding: 20px; flex-shrink: 0; 
+                padding: 20px; 
             }
             
-            /* Panel Editor: Mengambil sisa layar */
-            .editor-panel { width: 100%; height: 65vh; flex-shrink: 0; }
+            .editor-panel { width: 100%; height: auto; }
             
-            /* Terminal disesuaikan tingginya agar keyboard tidak menutupi seluruh layar */
-            .terminal { height: 120px; }
+            /* 5. Kunci tinggi textarea agar tidak meregang tak terbatas */
+            textarea#code-editor { height: 280px; flex: none; }
             
-            /* Toolbar merespons menjadi vertikal jika tidak muat */
-            .toolbar { flex-direction: column; height: auto; padding: 15px; gap: 10px; justify-content: center; }
-            #status-msg { margin-right: 0; margin-bottom: 5px; text-align: center; width: 100%; }
-            .btn-run, .btn-next { width: 100%; padding: 15px; } /* Tombol execute lebih mudah ditekan di HP */
-
+            .terminal { height: 150px; }
+            
+            /* 6. Susun ulang Toolbar agar tombol Run besar dan jelas di bawah */
+            .toolbar { flex-direction: column; height: auto; padding: 20px; gap: 15px; justify-content: center; background: #000; }
+            #status-msg { width: 100%; text-align: center; margin: 0; }
+            .btn-run, .btn-next { width: 100%; padding: 15px; font-size: 1.2rem; }
+            
             /* Overlays adjustments */
             #login-screen h1 { font-size: 1.8rem; }
             #login-screen p { font-size: 0.9rem; }
