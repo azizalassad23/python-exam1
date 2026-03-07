@@ -36,6 +36,7 @@
             background: rgba(10, 5, 18, 0.98); z-index: 9999;
             display: flex; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
+            padding: 20px;
         }
 
         .glitch { font-family: var(--font-header); font-size: 3rem; color: var(--cyber-purple); text-shadow: 3px 0 var(--cyber-teal), -3px 0 var(--cyber-pink); animation: glitch-anim 0.2s infinite; }
@@ -43,7 +44,7 @@
 
         input.cyber-input {
             background: #11081f; border: 2px solid var(--cyber-purple);
-            color: #fff; padding: 15px; width: 300px; margin: 10px;
+            color: #fff; padding: 15px; width: 300px; max-width: 100%; margin: 10px;
             font-family: var(--font-ui); font-size: 1.1rem; text-align: center;
         }
         input.cyber-input:focus { outline: none; box-shadow: 0 0 15px var(--cyber-purple); }
@@ -51,7 +52,7 @@
         .btn-cyber {
             background: var(--cyber-purple); color: #fff; border: 1px solid var(--cyber-teal);
             padding: 15px 40px; font-family: var(--font-header); font-size: 1.2rem;
-            cursor: pointer; margin-top: 20px; transition: 0.2s;
+            cursor: pointer; margin-top: 20px; transition: 0.2s; max-width: 100%;
         }
         .btn-cyber:hover { background: var(--cyber-teal); color: #000; box-shadow: 0 0 20px var(--cyber-teal); }
 
@@ -90,6 +91,47 @@
         #warning-screen { background: rgba(255, 0, 127, 0.95); color: #fff; }
         #lockdown-screen { background: rgba(80, 0, 150, 0.95); color: #fff; }
         .lock-timer { font-size: 5rem; font-family: var(--font-header); margin: 20px 0; color: var(--cyber-teal); text-shadow: 0 0 20px #000; }
+
+        /* =========================================
+           RESPONSIVE MOBILE STYLES (DI BAWAH 768px)
+           ========================================= */
+        @media (max-width: 768px) {
+            /* Tweak the Header */
+            header { padding: 0 15px; }
+            h1 { font-size: 1.1rem; }
+            .timer-box { font-size: 1.2rem; }
+            header > div { gap: 10px; }
+
+            /* Tweak the Workspace Layout to Column */
+            .workspace { flex-direction: column; overflow-y: auto; }
+            
+            /* Panel Soal: Pindah ke atas, tinggi pas, border di bawah */
+            .problem-panel { 
+                width: 100%; height: 35vh; 
+                border-right: none; border-bottom: 2px solid var(--cyber-purple); 
+                padding: 20px; flex-shrink: 0; 
+            }
+            
+            /* Panel Editor: Mengambil sisa layar */
+            .editor-panel { width: 100%; height: 65vh; flex-shrink: 0; }
+            
+            /* Terminal disesuaikan tingginya agar keyboard tidak menutupi seluruh layar */
+            .terminal { height: 120px; }
+            
+            /* Toolbar merespons menjadi vertikal jika tidak muat */
+            .toolbar { flex-direction: column; height: auto; padding: 15px; gap: 10px; justify-content: center; }
+            #status-msg { margin-right: 0; margin-bottom: 5px; text-align: center; width: 100%; }
+            .btn-run, .btn-next { width: 100%; padding: 15px; } /* Tombol execute lebih mudah ditekan di HP */
+
+            /* Overlays adjustments */
+            #login-screen h1 { font-size: 1.8rem; }
+            #login-screen p { font-size: 0.9rem; }
+            .glitch { font-size: 2rem; }
+            .lock-timer { font-size: 3.5rem; }
+            #warning-screen h1, #lockdown-screen h1 { font-size: 2.5rem; }
+            #result-screen h1 { font-size: 2.5rem; }
+            #final-score { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
@@ -109,7 +151,7 @@
     <div id="warning-screen" class="overlay" style="display:none;">
         <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #fff;">STRICT WARNING</h1>
         <h2 style="color: #fff;">SISTEM MENDETEKSI PERPINDAHAN TAB / APLIKASI.</h2>
-        <p style="font-size: 1.2rem; font-weight: bold; max-width: 600px; color: #fff;">
+        <p style="font-size: 1.1rem; font-weight: bold; max-width: 600px; color: #fff;">
             Peraturan Ujian Tengah Semester sangat ketat. Jika Anda memindahkan tab lagi, terminal Anda akan DIKUNCI SELAMA 20 MENIT dan tidak bisa di-refresh.
         </p>
         <button class="btn-cyber" style="background: #000; color: var(--cyber-teal);" onclick="dismissWarning()">SAYA MENGERTI</button>
@@ -119,12 +161,12 @@
         <h1 style="font-size: 4rem; font-family: var(--font-header); margin: 0; color: #fff;">SECURITY BREACH</h1>
         <h2 id="lockdown-warning" style="color: var(--cyber-pink);">MULTIPLE TAB SWITCHING LOGGED.</h2>
         <div class="lock-timer" id="lock-timer">20:00</div>
-        <p style="font-size: 1.2rem; font-weight: bold; color: #fff;">TERMINAL LOCKED. REFRESHING THE PAGE WILL NOT RESET THIS TIMER.</p>
+        <p style="font-size: 1.1rem; font-weight: bold; color: #fff;">TERMINAL LOCKED. REFRESHING THE PAGE WILL NOT RESET THIS TIMER.</p>
     </div>
 
     <header>
         <h1>MIDTERM QUIZ // 20_NODE</h1>
-        <div style="display: flex; gap: 30px; align-items: center;">
+        <div style="display: flex; gap: 20px; align-items: center;">
             <div style="color: var(--cyber-pink); font-weight: bold;">VIOLATIONS: <span id="violation-count">0</span></div>
             <div class="timer-box" id="main-timer">90:00</div>
         </div>
@@ -170,7 +212,7 @@
         let isExamActive = false, isLocked = false, isWarningOpen = false;
         let lastPenaltyTime = 0;
 
-        // --- DATABASE SOAL TERM QUIZ (20 SOAL: 12 Beginner + 8 Intermediate) ---
+        // --- DATABASE SOAL TERM QUIZ (20 SOAL) ---
         const questions = [
             // --- 12 SOAL PEMULA ---
             { title: "01. BASIC: GREETING", desc: "Buat variabel <code>nama = 'Budi'</code>. Gabungkan string tersebut dan print <code>Halo Budi</code>.", default: "nama = 'Budi'\n# Print dengan kata 'Halo '\n", check: (c, o) => c.includes("nama") && o.includes("Halo Budi") },
@@ -192,13 +234,8 @@
             { title: "15. BASIC LOOP ADDITION", desc: "Diberikan <code>x = 0</code>. Gunakan for loop sebanyak 3 kali (dengan <code>range(3)</code>) untuk menambahkan nilai 1 ke x secara berulang. Print nilai x di bagian akhir.", default: "x = 0\n\n# Loop range(3) dan tambahkan 1\n\nprint(x)", check: (c, o) => c.includes("for") && c.includes("range") && o.includes("3") },
             { title: "16. LIST PRODUCT", desc: "Kalikan semua elemen di <code>angka = [2, 3, 4]</code> menggunakan for loop (Hasil akhir harus 24). Print hasilnya.", default: "angka = [2, 3, 4]\nhasil = 1\n\n# Loop dan kalikan\n\nprint(hasil)", check: (c, o) => c.includes("for") && c.includes("*") && o.includes("24") },
             { title: "17. STRING FILTER", desc: "Diberikan <code>buah = ['Apel', 'Pisang', 'Anggur']</code>. Print HANYA buah yang berawalan huruf 'A'. (Trik: cek index [0] dari string).", default: "buah = ['Apel', 'Pisang', 'Anggur']\n\n# Loop dan cek buah[0] == 'A'\n", check: (c, o) => c.includes("for") && c.includes("[0]") && o.includes("Apel") && o.includes("Anggur") && !o.includes("Pisang") },
-            
-            // SOAL 18 (BARU - LEBIH MUDAH)
             { title: "18. SUM OF EVENS", desc: "Diberikan <code>data = [2, 5, 8, 11]</code>. Gunakan for loop dan if untuk <b>menjumlahkan HANYA angka genap</b> (habis dibagi 2). Print hasil akhirnya.", default: "data = [2, 5, 8, 11]\ntotal = 0\n\n# Loop, If, tambahkan ke total\n\nprint(total)", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("10") && !o.includes("26") },
-            
             { title: "19. LIST: CLEAR ALL", desc: "Hapus seluruh isi list <code>data = [9, 8, 7]</code> menggunakan method <code>.clear()</code>. Print hasilnya (harus berupa list kosong []).", default: "data = [9, 8, 7]\n\n# Bersihkan list\n\nprint(data)", check: (c, o) => c.includes(".clear()") && o.includes("[]") },
-            
-            // SOAL 20 (BARU - LEBIH MUDAH)
             { title: "20. UPPERCASE LIST", desc: "Diberikan list <code>warna = ['merah', 'biru']</code>. Gunakan for loop untuk mencetak setiap warna dengan huruf kapital penuh. (Gunakan method <code>.upper()</code>).", default: "warna = ['merah', 'biru']\n\n# Loop dan print dengan .upper()\n", check: (c, o) => c.includes("for") && c.includes(".upper()") && o.includes("MERAH") && o.includes("BIRU") }
         ];
 
