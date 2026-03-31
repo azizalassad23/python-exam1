@@ -96,18 +96,12 @@
            RESPONSIVE MOBILE STYLES (DI BAWAH 768px)
            ========================================= */
         @media (max-width: 768px) {
-            /* 1. Izinkan scrolling natural di body untuk HP */
             body { height: auto; overflow-y: auto; }
-            
-            /* 2. Sesuaikan Header */
             header { padding: 15px; height: auto; flex-direction: column; gap: 10px; text-align: center; }
             h1 { font-size: 1.5rem; }
             .timer-box { font-size: 1.2rem; width: 100%; text-align: center; margin-bottom: 5px; }
-
-            /* 3. Bebaskan tinggi Workspace */
             .workspace { flex-direction: column; height: auto; overflow: visible; }
             
-            /* 4. Panel Soal menyesuaikan isinya */
             .problem-panel { 
                 width: 100%; height: auto; min-height: 200px; 
                 border-right: none; border-bottom: 2px solid var(--cyber-purple); 
@@ -115,18 +109,13 @@
             }
             
             .editor-panel { width: 100%; height: auto; }
-            
-            /* 5. Kunci tinggi textarea agar tidak meregang tak terbatas */
             textarea#code-editor { height: 280px; flex: none; }
-            
             .terminal { height: 150px; }
             
-            /* 6. Susun ulang Toolbar agar tombol Run besar dan jelas di bawah */
             .toolbar { flex-direction: column; height: auto; padding: 20px; gap: 15px; justify-content: center; background: #000; }
             #status-msg { width: 100%; text-align: center; margin: 0; }
             .btn-run, .btn-next { width: 100%; padding: 15px; font-size: 1.2rem; }
             
-            /* Overlays adjustments */
             #login-screen h1 { font-size: 1.8rem; }
             #login-screen p { font-size: 0.9rem; }
             .glitch { font-size: 2rem; }
@@ -171,7 +160,7 @@
         <h1>MIDTERM QUIZ // 20_NODE</h1>
         <div style="display: flex; gap: 20px; align-items: center;">
             <div style="color: var(--cyber-pink); font-weight: bold;">VIOLATIONS: <span id="violation-count">0</span></div>
-            <div class="timer-box" id="main-timer">90:00</div>
+            <div class="timer-box" id="main-timer">60:00</div>
         </div>
     </header>
 
@@ -204,7 +193,7 @@
 
     <script>
         // --- SETUP GOOGLE SHEET URL ---
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMlysRhY7kLOqIjxGmWcvFgwwa644vdf3Iy9PyWsGY6j41DbBCX0Ge5QYWknMVP6b/exec'; // <-- PASTE URL DISINI
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfMlysRhY7kLOqIjxGmWcvFgwwa644vdf3Iy9PyWsGY6j41DbBCX0Ge5QYWknMVP6b/exec'; 
 
         let pyodide;
         let studentName = "", studentClass = "";
@@ -215,31 +204,31 @@
         let isExamActive = false, isLocked = false, isWarningOpen = false;
         let lastPenaltyTime = 0;
 
-        // --- DATABASE SOAL TERM QUIZ (20 SOAL) ---
+        // --- DATABASE SOAL TERM QUIZ MODIFIED (20 SOAL) ---
         const questions = [
             // --- 12 SOAL PEMULA ---
-            { title: "01. BASIC: GREETING", desc: "Buat variabel <code>nama = 'Budi'</code>. Gabungkan string tersebut dan print <code>Halo Budi</code>.", default: "nama = 'Budi'\n# Print dengan kata 'Halo '\n", check: (c, o) => c.includes("nama") && o.includes("Halo Budi") },
-            { title: "02. MATH: PANGKAT", desc: "Diberikan variabel <code>x = 5</code>. Hitung dan print hasil pangkat 3 dari x (5 dipangkatkan 3).", default: "x = 5\n# Gunakan operator pangkat\n", check: (c, o) => c.includes("**") && o.includes("125") },
-            { title: "03. MATH: LUAS", desc: "Diketahui panjang <code>p = 10</code> dan lebar <code>l = 5</code>. Hitung luas persegi panjang dan print hasilnya.", default: "p = 10\nl = 5\n\n# Luas = panjang * lebar\n", check: (c, o) => c.includes("*") && o.includes("50") },
-            { title: "04. MULTIPLE PRINT", desc: "Print dua kata secara terpisah: <code>'Sistem'</code> dan <code>'Aktif'</code>. Gunakan dua perintah <code>print()</code> yang berbeda.", default: "# Print kata pertama\n# Print kata kedua\n", check: (c, o) => c.match(/print/g) && c.match(/print/g).length >= 2 && o.includes("Sistem") && o.includes("Aktif") },
-            { title: "05. IF: KELULUSAN", desc: "Nilai siswa adalah <code>70</code>. Jika nilai >= 75 print 'Lulus', jika di bawahnya print 'Gagal'.", default: "nilai = 70\n\n# Buat pengecekan if else\n", check: (c, o) => c.includes("if") && c.includes("else") && o.includes("Gagal") },
-            { title: "06. IF: PASSWORD", desc: "Password yang dimasukkan adalah <code>'1234'</code>. Jika password sama dengan 'rahasia' print 'Akses', jika salah print 'Tolak'.", default: "pwd = '1234'\n\n# Ingat gunakan == untuk perbandingan\n", check: (c, o) => c.includes("if") && c.includes("==") && o.includes("Tolak") },
-            { title: "07. MIXED LIST", desc: "List Python bisa menyimpan tipe data campuran. Buat list <code>campur</code> yang isinya: angka 1 (integer), 'Dua' (string), dan 3.0 (float). Print listnya.", default: "campur = \n", check: (c, o) => c.includes("[") && o.includes("1") && o.includes("Dua") && o.includes("3.0") },
-            { title: "08. INDEXING: ITEM 3", desc: "Print elemen KETIGA dari <code>data = ['Satu', 'Dua', 'Tiga', 'Empat']</code>.", default: "data = ['Satu', 'Dua', 'Tiga', 'Empat']\n\n# Ingat urutan index dimulai dari 0\n", check: (c, o) => c.includes("[2]") && o.includes("Tiga") && !o.includes("Empat") },
-            { title: "09. LIST EDIT LAST", desc: "Ganti elemen TERAKHIR dari <code>keranjang = ['Apel', 'Jeruk', 'Lama']</code> menjadi 'Baru'. Print listnya.", default: "keranjang = ['Apel', 'Jeruk', 'Lama']\n\n# Gunakan index negatif untuk modifikasi\n", check: (c, o) => c.includes("[-1]") && c.includes("=") && o.includes("Baru") && !o.includes("Lama") },
-            { title: "10. FIND MINIMUM", desc: "Gunakan fungsi <code>min()</code> untuk mencari angka paling kecil dari <code>angka = [8, 2, 5]</code>. Print hasilnya.", default: "angka = [8, 2, 5]\n\n# Gunakan fungsi min()\n", check: (c, o) => c.includes("min(") && o.includes("2") },
-            { title: "11. LIST MERGE", desc: "Gabungkan <code>list1 = [1, 2]</code> dan <code>list2 = [3, 4]</code> menggunakan operator tambah (+). Simpan di <code>list3</code> lalu print.", default: "list1 = [1, 2]\nlist2 = [3, 4]\n\n# list3 = ...\n", check: (c, o) => c.includes("+") && o.includes("3") && o.includes("4") && o.includes("[1, 2, 3, 4]") },
-            { title: "12. STRING LOOP", desc: "Gunakan <code>for</code> loop untuk mem-print setiap huruf dari kata <code>'PYTHON'</code> secara menurun.", default: "kata = 'PYTHON'\n\n# Loop setiap karakter\n", check: (c, o) => c.includes("for") && o.includes("P") && o.includes("Y") && o.includes("N") },
+            { title: "01. BASIC: GREETING", desc: "Buat variabel <code>nama = 'Andi'</code>. Gabungkan string tersebut dan print <code>Halo Andi</code>.", default: "nama = 'Andi'\n# Print dengan kata 'Halo '\n", check: (c, o) => c.includes("nama") && o.includes("Halo Andi") },
+            { title: "02. MATH: PANGKAT", desc: "Diberikan variabel <code>y = 4</code>. Hitung dan print hasil pangkat 3 dari y (4 dipangkatkan 3).", default: "y = 4\n# Gunakan operator pangkat\n", check: (c, o) => c.includes("**") && o.includes("64") },
+            { title: "03. MATH: LUAS SEGITIGA", desc: "Diketahui <code>alas = 10</code> dan <code>tinggi = 8</code>. Hitung luas segitiga (0.5 * alas * tinggi) dan print hasilnya.", default: "alas = 10\ntinggi = 8\n\n# Luas = 0.5 * alas * tinggi\n", check: (c, o) => c.includes("*") && o.includes("40") },
+            { title: "04. MULTIPLE PRINT", desc: "Print dua kata secara terpisah: <code>'Server'</code> dan <code>'Online'</code>. Gunakan dua perintah <code>print()</code> yang berbeda.", default: "# Print kata pertama\n# Print kata kedua\n", check: (c, o) => c.match(/print/g) && c.match(/print/g).length >= 2 && o.includes("Server") && o.includes("Online") },
+            { title: "05. IF: KELULUSAN", desc: "Nilai siswa adalah <code>78</code>. Jika nilai >= 80 print 'Lulus', jika di bawahnya print 'Remedial'.", default: "nilai = 78\n\n# Buat pengecekan if else\n", check: (c, o) => c.includes("if") && c.includes("else") && o.includes("Remedial") },
+            { title: "06. IF: PASSWORD", desc: "Password yang dimasukkan adalah <code>'admin123'</code>. Jika password sama dengan 'superadmin' print 'Akses Diterima', jika salah print 'Akses Ditolak'.", default: "pwd = 'admin123'\n\n# Ingat gunakan == untuk perbandingan\n", check: (c, o) => c.includes("if") && c.includes("==") && o.includes("Akses Ditolak") },
+            { title: "07. MIXED LIST", desc: "Buat list <code>campur</code> yang isinya: angka 9 (integer), 'Tiga' (string), dan 4.5 (float). Print listnya.", default: "campur = \n", check: (c, o) => c.includes("[") && o.includes("9") && o.includes("Tiga") && o.includes("4.5") },
+            { title: "08. INDEXING: ITEM 2", desc: "Print elemen KEDUA dari <code>data = ['Merah', 'Kuning', 'Hijau', 'Biru']</code>.", default: "data = ['Merah', 'Kuning', 'Hijau', 'Biru']\n\n# Ingat urutan index dimulai dari 0\n", check: (c, o) => c.includes("[1]") && o.includes("Kuning") && !o.includes("Hijau") },
+            { title: "09. LIST EDIT LAST", desc: "Ganti elemen TERAKHIR dari <code>tas = ['Buku', 'Pena', 'Kertas']</code> menjadi 'Laptop'. Print listnya.", default: "tas = ['Buku', 'Pena', 'Kertas']\n\n# Gunakan index negatif untuk modifikasi\n", check: (c, o) => c.includes("[-1]") && c.includes("=") && o.includes("Laptop") && !o.includes("Kertas") },
+            { title: "10. FIND MAXIMUM", desc: "Gunakan fungsi <code>max()</code> untuk mencari angka paling besar dari <code>angka = [12, 45, 7]</code>. Print hasilnya.", default: "angka = [12, 45, 7]\n\n# Gunakan fungsi max()\n", check: (c, o) => c.includes("max(") && o.includes("45") },
+            { title: "11. LIST MERGE", desc: "Gabungkan <code>list1 = [5, 6]</code> dan <code>list2 = [7, 8]</code> menggunakan operator tambah (+). Simpan di <code>list3</code> lalu print.", default: "list1 = [5, 6]\nlist2 = [7, 8]\n\n# list3 = ...\n", check: (c, o) => c.includes("+") && o.includes("7") && o.includes("8") && o.includes("[5, 6, 7, 8]") },
+            { title: "12. STRING LOOP", desc: "Gunakan <code>for</code> loop untuk mem-print setiap huruf dari kata <code>'CYBER'</code> secara menurun.", default: "kata = 'CYBER'\n\n# Loop setiap karakter\n", check: (c, o) => c.includes("for") && o.includes("C") && o.includes("Y") && o.includes("B") && o.includes("E") && o.includes("R") },
 
             // --- 8 SOAL MENENGAH ---
-            { title: "13. WHILE LOOP", desc: "Gunakan <code>while</code> loop untuk mem-print angka 1 sampai 5. Ingat untuk menambahkan +1 pada variabel angkanya agar tidak *infinite loop*.", default: "i = 1\nwhile i <= 5:\n    # print i dan tambah 1\n", check: (c, o) => c.includes("while") && (c.includes("i + 1") || c.includes("i += 1")) && o.includes("5") && !o.includes("6") },
-            { title: "14. MULTIPLES OF 5", desc: "Gunakan <code>for</code> dengan <code>range(1, 21)</code>. Gunakan <code>if</code>, print HANYA angka yang merupakan kelipatan 5.", default: "# Loop dari 1 hingga 20\nfor i in range(1, 21):\n    pass\n", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("15") && o.includes("20") && !o.includes("14") },
-            { title: "15. BASIC LOOP ADDITION", desc: "Diberikan <code>x = 0</code>. Gunakan for loop sebanyak 3 kali (dengan <code>range(3)</code>) untuk menambahkan nilai 1 ke x secara berulang. Print nilai x di bagian akhir.", default: "x = 0\n\n# Loop range(3) dan tambahkan 1\n\nprint(x)", check: (c, o) => c.includes("for") && c.includes("range") && o.includes("3") },
-            { title: "16. LIST PRODUCT", desc: "Kalikan semua elemen di <code>angka = [2, 3, 4]</code> menggunakan for loop (Hasil akhir harus 24). Print hasilnya.", default: "angka = [2, 3, 4]\nhasil = 1\n\n# Loop dan kalikan\n\nprint(hasil)", check: (c, o) => c.includes("for") && c.includes("*") && o.includes("24") },
-            { title: "17. STRING FILTER", desc: "Diberikan <code>buah = ['Apel', 'Pisang', 'Anggur']</code>. Print HANYA buah yang berawalan huruf 'A'. (Trik: cek index [0] dari string).", default: "buah = ['Apel', 'Pisang', 'Anggur']\n\n# Loop dan cek buah[0] == 'A'\n", check: (c, o) => c.includes("for") && c.includes("[0]") && o.includes("Apel") && o.includes("Anggur") && !o.includes("Pisang") },
-            { title: "18. SUM OF EVENS", desc: "Diberikan <code>data = [2, 5, 8, 11]</code>. Gunakan for loop dan if untuk <b>menjumlahkan HANYA angka genap</b> (habis dibagi 2). Print hasil akhirnya.", default: "data = [2, 5, 8, 11]\ntotal = 0\n\n# Loop, If, tambahkan ke total\n\nprint(total)", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("10") && !o.includes("26") },
-            { title: "19. LIST: CLEAR ALL", desc: "Hapus seluruh isi list <code>data = [9, 8, 7]</code> menggunakan method <code>.clear()</code>. Print hasilnya (harus berupa list kosong []).", default: "data = [9, 8, 7]\n\n# Bersihkan list\n\nprint(data)", check: (c, o) => c.includes(".clear()") && o.includes("[]") },
-            { title: "20. UPPERCASE LIST", desc: "Diberikan list <code>warna = ['merah', 'biru']</code>. Gunakan for loop untuk mencetak setiap warna dengan huruf kapital penuh. (Gunakan method <code>.upper()</code>).", default: "warna = ['merah', 'biru']\n\n# Loop dan print dengan .upper()\n", check: (c, o) => c.includes("for") && c.includes(".upper()") && o.includes("MERAH") && o.includes("BIRU") }
+            { title: "13. WHILE LOOP", desc: "Gunakan <code>while</code> loop untuk mem-print angka 1 sampai 4. Ingat untuk menambahkan +1 pada variabel.", default: "i = 1\nwhile i <= 4:\n    # print i dan tambah 1\n", check: (c, o) => c.includes("while") && (c.includes("i + 1") || c.includes("i += 1")) && o.includes("4") && !o.includes("5") },
+            { title: "14. MULTIPLES OF 3", desc: "Gunakan <code>for</code> dengan <code>range(1, 16)</code>. Gunakan <code>if</code>, print HANYA angka yang merupakan kelipatan 3.", default: "# Loop dari 1 hingga 15\nfor i in range(1, 16):\n    pass\n", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("15") && o.includes("12") && !o.includes("14") },
+            { title: "15. BASIC LOOP ADDITION", desc: "Diberikan <code>x = 0</code>. Gunakan for loop sebanyak 4 kali (dengan <code>range(4)</code>) untuk menambahkan nilai 2 ke x secara berulang. Print nilai x di bagian akhir.", default: "x = 0\n\n# Loop range(4) dan tambahkan 2\n\nprint(x)", check: (c, o) => c.includes("for") && c.includes("range") && o.includes("8") },
+            { title: "16. LIST PRODUCT", desc: "Kalikan semua elemen di <code>angka = [2, 5, 3]</code> menggunakan for loop (Hasil akhir harus 30). Print hasilnya.", default: "angka = [2, 5, 3]\nhasil = 1\n\n# Loop dan kalikan\n\nprint(hasil)", check: (c, o) => c.includes("for") && c.includes("*") && o.includes("30") },
+            { title: "17. STRING FILTER", desc: "Diberikan <code>buah = ['Mangga', 'Jeruk', 'Melon']</code>. Print HANYA buah yang berawalan huruf 'M'. (Trik: cek index [0] dari string).", default: "buah = ['Mangga', 'Jeruk', 'Melon']\n\n# Loop dan cek buah[0] == 'M'\n", check: (c, o) => c.includes("for") && c.includes("[0]") && o.includes("Mangga") && o.includes("Melon") && !o.includes("Jeruk") },
+            { title: "18. SUM OF ODDS", desc: "Diberikan <code>data = [3, 6, 9, 12]</code>. Gunakan for loop dan if untuk <b>menjumlahkan HANYA angka ganjil</b> (tidak habis dibagi 2). Print hasil akhirnya.", default: "data = [3, 6, 9, 12]\ntotal = 0\n\n# Loop, If (modulus != 0), tambahkan ke total\n\nprint(total)", check: (c, o) => c.includes("for") && c.includes("%") && o.includes("12") && !o.includes("30") },
+            { title: "19. LIST: CLEAR ALL", desc: "Hapus seluruh isi list <code>data = [10, 20, 30]</code> menggunakan method <code>.clear()</code>. Print hasilnya (harus berupa list kosong []).", default: "data = [10, 20, 30]\n\n# Bersihkan list\n\nprint(data)", check: (c, o) => c.includes(".clear()") && o.includes("[]") },
+            { title: "20. LOWERCASE LIST", desc: "Diberikan list <code>kata = ['BESAR', 'KECIL']</code>. Gunakan for loop untuk mencetak setiap kata dengan huruf kecil penuh. (Gunakan method <code>.lower()</code>).", default: "kata = ['BESAR', 'KECIL']\n\n# Loop dan print dengan .lower()\n", check: (c, o) => c.includes("for") && c.includes(".lower()") && o.includes("besar") && o.includes("kecil") }
         ];
 
         // --- CHECK LOCAL STORAGE ON LOAD ---
@@ -274,8 +263,8 @@
             localStorage.setItem("midterm_currentQ", "0");
             localStorage.setItem("midterm_violations", "0");
             
-            // 90 Menit (5400 detik)
-            examEndTime = Date.now() + (5400 * 1000);
+            // WAKTU DIUBAH MENJADI 60 Menit (3600 detik)
+            examEndTime = Date.now() + (3600 * 1000);
             localStorage.setItem("midterm_examEnd", examEndTime.toString());
 
             document.getElementById("login-screen").style.display = "none";
@@ -430,7 +419,7 @@ mystdout.getvalue()`;
                     document.getElementById("btn-next").style.display = "inline-block";
                     
                     if(!q.completed) { 
-                        score += 100; // 100 poin * 20 soal = Total 2000
+                        score += 100; 
                         q.completed = true; 
                         localStorage.setItem("midterm_score", score.toString());
                     } 
@@ -479,7 +468,8 @@ mystdout.getvalue()`;
         function sendDataToSheet() {
             const statusEl = document.getElementById("send-status");
             
-            let timeUsedSeconds = Math.max(0, 5400 - Math.floor((examEndTime - Date.now()) / 1000));
+            // WAKTU DIUBAH MENJADI 3600 Detik (60 Menit)
+            let timeUsedSeconds = Math.max(0, 3600 - Math.floor((examEndTime - Date.now()) / 1000));
             let m = Math.floor(timeUsedSeconds / 60).toString().padStart(2, '0');
             let s = (timeUsedSeconds % 60).toString().padStart(2, '0');
             
